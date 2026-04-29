@@ -45,6 +45,11 @@ export interface FetchOptions {
   timeoutMs?: number;
 }
 
+function normalizeWordPressBaseUrl(input: string): string {
+  const trimmed = input.trim().replace(/\/$/, "");
+  return trimmed.replace(/\/wp-json(?:\/wp\/v2)?\/?$/, "");
+}
+
 function buildUrl(base: string, path: string, params?: Record<string, string | number>): string {
   // إزالة الشرطة المائلة الزائدة من النهاية
   const cleanBase = base.replace(/\/$/, "");
@@ -72,6 +77,8 @@ async function wpFetch<T>(url: string, options?: FetchOptions): Promise<T> {
 }
 
 export function createWordPressClient(apiUrl: string, defaultOptions?: FetchOptions) {
+  const baseSiteUrl = normalizeWordPressBaseUrl(apiUrl);
+
   return {
     async getPosts(params?: { page?: number; perPage?: number; categoryId?: number; tagId?: number }): Promise<WpPost[]> {
       const query: Record<string, string | number> = {
@@ -81,12 +88,12 @@ export function createWordPressClient(apiUrl: string, defaultOptions?: FetchOpti
       };
       if (params?.categoryId) query.categories = params.categoryId;
       if (params?.tagId) query.tags = params.tagId;
-      return wpFetch<WpPost[]>(buildUrl(apiUrl, "/wp/v2/posts", query), defaultOptions);
+      return wpFetch<WpPost[]>(buildUrl(baseSiteUrl, "/wp-json/wp/v2/posts", query), defaultOptions);
     },
 
     async getPost(slug: string): Promise<WpPost | null> {
       const posts = await wpFetch<WpPost[]>(
-        buildUrl(apiUrl, "/wp/v2/posts", { slug, _embed: "1" }),
+        buildUrl(baseSiteUrl, "/wp-json/wp/v2/posts", { slug, _embed: "1" }),
         defaultOptions
       );
       return posts[0] ?? null;
@@ -94,24 +101,32 @@ export function createWordPressClient(apiUrl: string, defaultOptions?: FetchOpti
 
     async getCategories(): Promise<WpCategory[]> {
       return wpFetch<WpCategory[]>(
-        buildUrl(apiUrl, "/wp/v2/categories", { per_page: 100 }),
+        buildUrl(baseSiteUrl, "/wp-json/wp/v2/categories", { per_page: 100 }),
         defaultOptions
       );
     },
 
     async getTags(): Promise<WpTag[]> {
       return wpFetch<WpTag[]>(
-        buildUrl(apiUrl, "/wp/v2/tags", { per_page: 100 }),
+        buildUrl(baseSiteUrl, "/wp-json/wp/v2/tags", { per_page: 100 }),
         defaultOptions
       );
     },
 
     async getPage(slug: string): Promise<WpPage | null> {
       const pages = await wpFetch<WpPage[]>(
-        buildUrl(apiUrl, "/wp/v2/pages", { slug }),
+        buildUrl(baseSiteUrl, "/wp-json/wp/v2/pages", { slug }),
         defaultOptions
       );
       return pages[0] ?? null;
     },
   };
+}
+
+export function createDefaultWordPressClient(options?: FetchOptions) {
+  const base = import.meta.env.WORDPRESS_API_URL;
+  if (!base) {
+    throw new Error("WORDPRESS_API_URL is not set. Please define it in your env.");
+  }
+  return createWordPressClient(base, options);
 }

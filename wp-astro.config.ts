@@ -7,7 +7,7 @@ export interface WpAstroConfig {
   // Data sources — WordPress only in this phase
   sources: {
     wordpress: {
-      apiUrl: string; // WordPress REST API base URL, e.g. https://myblog.com/wp-json
+      apiUrl: string; // WordPress site base URL, e.g. https://myblog.com
     };
   };
 
@@ -64,11 +64,11 @@ export interface WpAstroConfig {
 const wpAstroConfig: WpAstroConfig = {
   sources: {
     wordpress: {
-      apiUrl: process.env.WORDPRESS_API_URL ?? "https://myblog.com/wp-json",
+      apiUrl: process.env.WORDPRESS_API_URL ?? "https://myblog.com",
     },
   },
 
-  wordpressUrl: process.env.WORDPRESS_API_URL ?? "https://myblog.com/wp-json",
+  wordpressUrl: process.env.WORDPRESS_API_URL ?? "https://myblog.com",
   wpLocale: "en",
 
   siteName: {

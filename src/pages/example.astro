@@ -1,0 +1,24 @@
+---
+import wpAstroConfig from "../../wp-astro.config";
+import { createDefaultWordPressClient } from "../lib/sources/wordpress/client";
+
+const client = createDefaultWordPressClient({
+  timeoutMs: wpAstroConfig.fetch?.timeoutMs,
+});
+const posts = await client.getPosts({ perPage: 5, page: 1 });
+---
+
+<main>
+  <h1>Example: Latest WordPress posts</h1>
+  <p>هذه صفحة مثال فقط توضح كيف تجيب مقالات من ووردبرس.</p>
+
+  <ul>
+    {posts.map((post) => (
+      <li>
+        <a href={post.link} target="_blank" rel="noopener noreferrer">
+          {post.title.rendered}
+        </a>
+      </li>
+    ))}
+  </ul>
+</main>
