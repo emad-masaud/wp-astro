@@ -1,0 +1,40 @@
+{
+  "name": "wp-astro",
+  "version": "0.1.0",
+  "description": "Headless WordPress integration for Astro. Connect any WordPress site as a CMS and render it with your own Astro theme.",
+  "keywords": [
+    "astro-integration",
+    "astro-component",
+    "withastro",
+    "wordpress",
+    "headless",
+    "cms"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/emad-masaud/wp-astro.git"
+  },
+  "homepage": "https://github.com/emad-masaud/wp-astro#readme",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "lint": "eslint src --ext .ts,.astro"
+  },
+  "dependencies": {
+    "astro": "^4.0.0",
+    "@astrojs/cloudflare": "^10.0.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.0.0",
+    "wrangler": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0 <24"
+  }
+}

@@ -1,0 +1,21 @@
+name = "wp-astro"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./dist"
+
+# متغيرات البيئة المطلوبة — Required env vars
+# Set these in Cloudflare Pages dashboard:
+#   WORDPRESS_API_URL
+#   SITE_URL
+
+# KV namespace (اختياري | optional)
+# Uncomment and update binding ID if you want engagement data
+# [[kv_namespaces]]
+# binding = "ENGAGEMENT_KV"
+# id = "YOUR_KV_NAMESPACE_ID"
+
+# D1 database (اختياري | optional)
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "wp-astro-db"
+# database_id = "YOUR_D1_DATABASE_ID"

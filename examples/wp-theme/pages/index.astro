@@ -1,0 +1,20 @@
+---
+// examples/wp-theme/pages/index.astro
+// صفحة رئيسية مثال — ليست جزءاً من كور wp-astro
+// Example home page — NOT part of wp-astro core
+
+import { createWordPressClient } from "../../../src/lib/sources/wordpress/client.ts";
+import DefaultTheme from "../themes/default.astro";
+
+const apiUrl = import.meta.env.WORDPRESS_API_URL ?? "";
+const client = createWordPressClient(apiUrl);
+
+let posts = [];
+try {
+  posts = await client.getPosts({ perPage: 10 });
+} catch {
+  // يتم عرض صفحة فارغة إذا تعذر الاتصال
+}
+---
+
+<DefaultTheme title="Home" posts={posts} />

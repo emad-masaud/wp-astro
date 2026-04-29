@@ -1,0 +1,12 @@
+# .dev.vars.example
+# متغيرات البيئة للتطوير المحلي مع Wrangler
+# Local development environment variables for Wrangler
+# انسخ هذا الملف إلى .dev.vars وعدّل القيم — لا ترفع .dev.vars أبداً
+# Copy this file to .dev.vars and fill in your values — NEVER commit .dev.vars
+
+# مطلوب | Required
+WORDPRESS_API_URL=https://myblog.com/wp-json
+SITE_URL=http://localhost:4321
+
+# اختياري — Cloudflare KV binding name (optional engagement data)
+# ENGAGEMENT_KV=your_kv_namespace_id

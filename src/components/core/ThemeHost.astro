@@ -1,0 +1,24 @@
+---
+// src/components/core/ThemeHost.astro
+// المكون الوحيد في كور wp-astro — يحمّل الثيم الذي تحدده
+// The only core component in wp-astro — loads the theme you provide
+
+// الاستخدام | Usage:
+// <ThemeHost theme={import("../../examples/wp-theme/themes/default.astro")} />
+
+export interface Props {
+  /** مسار ملف الثيم | Path to the theme component */
+  theme: Promise<{ default: unknown }> | { default: unknown };
+  /** أي props تريد تمريرها للثيم | Any props to pass to the theme */
+  [key: string]: unknown;
+}
+
+const { theme, ...rest } = Astro.props;
+
+// تحميل الثيم — theme is loaded dynamically by the caller
+const resolvedTheme = await Promise.resolve(theme);
+const ThemeComponent = resolvedTheme.default as (props: Record<string, unknown>) => unknown;
+---
+
+{/* ThemeHost: wp-astro core renders your theme here — no built-in UI */}
+{ThemeComponent && <ThemeComponent {...rest} />}

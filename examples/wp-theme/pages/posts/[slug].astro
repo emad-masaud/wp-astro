@@ -1,0 +1,43 @@
+---
+// examples/wp-theme/pages/posts/[slug].astro
+// صفحة مقال مثال — ليست جزءاً من كور wp-astro
+// Example post page — NOT part of wp-astro core
+
+import { createWordPressClient } from "../../../../src/lib/sources/wordpress/client.ts";
+
+export async function getStaticPaths() {
+  const apiUrl = import.meta.env.WORDPRESS_API_URL ?? "";
+  const client = createWordPressClient(apiUrl);
+  let posts = [];
+  try {
+    posts = await client.getPosts({ perPage: 100 });
+  } catch {}
+  return posts.map((p) => ({ params: { slug: p.slug } }));
+}
+
+const { slug } = Astro.params;
+const apiUrl = import.meta.env.WORDPRESS_API_URL ?? "";
+const client = createWordPressClient(apiUrl);
+const post = await client.getPost(slug as string);
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{post?.title?.rendered ?? "Post not found"}</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }
+    </style>
+  </head>
+  <body>
+    {post ? (
+      <article>
+        <h1 set:html={post.title.rendered} />
+        <div set:html={post.content.rendered} />
+      </article>
+    ) : (
+      <p>Post not found.</p>
+    )}
+  </body>
+</html>

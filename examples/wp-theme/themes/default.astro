@@ -1,0 +1,38 @@
+---
+// examples/wp-theme/themes/default.astro
+// ثيم مثال بسيط — ليس جزءاً من كور wp-astro
+// Example theme — NOT part of wp-astro core
+
+export interface Props {
+  title?: string;
+  posts?: Array<{ id: number; slug: string; title: { rendered: string }; excerpt: { rendered: string } }>;
+}
+
+const { title = "My WordPress Site", posts = [] } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }
+      h1 { border-bottom: 2px solid #eee; padding-bottom: 1rem; }
+      article { margin-bottom: 2rem; }
+      a { color: #0066cc; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <h1>{title}</h1>
+    {posts.length === 0 && <p>No posts found. Make sure WORDPRESS_API_URL is set correctly.</p>}
+    {posts.map((post) => (
+      <article>
+        <h2><a href={`/posts/${post.slug}`} set:html={post.title.rendered} /></h2>
+        <div set:html={post.excerpt.rendered} />
+      </article>
+    ))}
+  </body>
+</html>

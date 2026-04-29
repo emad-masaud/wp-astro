@@ -1,0 +1,287 @@
+TITLE
+Create a fresh public integration project called "wp-astro" (Headless WordPress + Astro) from an empty repo.
+
+LANG
+- Write code, comments, and docs primarily in English.
+- Where we speak to end-users (README), include a short Arabic (Gulf) version next to the English version, simple and direct.
+
+CONTEXT
+- This repo is EMPTY. There is no previous code to rely on.
+- Target: Astro + Cloudflare Pages.
+- Purpose: Simple integration that lets any Astro project read content from a WordPress site via REST API.
+- Scope: Data + minimal theme host + docs. No full blog theme, no marketplace, no custom auth, no robots/sitemap helpers.
+
+HIGH LEVEL GOAL
+- Build a small library that:
+  1) Wraps the WordPress REST API into a clean TypeScript client.
+  2) Exposes a simple config file (wp-astro.config.ts) for site settings.
+  3) Provides a minimal ThemeHost Astro component to mount any Astro theme.
+  4) Is easy to deploy on Cloudflare Pages (with 1–2 env vars).
+  5) Can later be published as an Astro integration package.
+
+NON GOALS
+- Do NOT implement:
+  - Full blog UI / marketplace / listings.
+  - Authentication or user accounts.
+  - robots.txt or sitemap.xml helpers.
+  - Integration with any system other than WordPress.
+
+────────────────
+STEP 1  INITIALIZE ASTRO + CLOUDFLARE
+────────────────
+
+1.1  Create a basic Astro project in this repo
+- If there is no package.json yet:
+  - Run the equivalent of:
+    - `npm init astro@latest .` (minimal template, TypeScript, no extra integrations yet)
+- Ensure project structure:
+  - astro.config.mjs
+  - src/pages/
+  - src/components/
+  - src/lib/
+
+1.2  Add Cloudflare adapter
+- Install official Cloudflare adapter for Astro.
+- Update astro.config.mjs:
+
+  ```ts
+  import { defineConfig } from "astro/config";
+  import cloudflare from "@astrojs/cloudflare";
+
+  export default defineConfig({
+    output: "server",
+    adapter: cloudflare(),
+  });
+  ```
+
+- Keep config simple; no extra integrations.
+
+────────────────
+STEP 2  WORDPRESS CLIENT (DATA LAYER)
+────────────────
+
+Goal: a single, well-typed client for WordPress REST API.
+
+2.1  Create `src/lib/wordpress-client.ts`
+- Implement a client factory:
+
+  ```ts
+  export interface WordpressClientConfig {
+    baseUrl: string; // e.g. https://example.com
+  }
+
+  export function createWordpressClient(config: WordpressClientConfig) {
+    const baseApi = new URL("/wp-json/wp/v2/", config.baseUrl).toString();
+
+    async function getPosts(params?: Record<string, string | number>) { ... }
+    async function getPostBySlug(slug: string) { ... }
+    async function getCategories(params?: Record<string, string | number>) { ... }
+    async function getTags(params?: Record<string, string | number>) { ... }
+
+    return {
+      getPosts,
+      getPostBySlug,
+      getCategories,
+      getTags,
+    };
+  }
+  ```
+
+- Use the official WordPress REST endpoints:
+  - `/wp-json/wp/v2/posts`
+  - `/wp-json/wp/v2/posts?slug=...`
+  - `/wp-json/wp/v2/categories`
+  - `/wp-json/wp/v2/tags`
+
+2.2  Types
+- Add simple TypeScript types inside the same file or a separate `src/lib/wordpress-types.ts`, e.g.:
+
+  ```ts
+  export interface WpPost {
+    id: number;
+    slug: string;
+    date: string;
+    title: { rendered: string };
+    content: { rendered: string };
+    excerpt: { rendered: string };
+    // add only what we need, keep it minimal
+  }
+  ```
+
+- Use these types as return types for the client functions.
+
+2.3  Env configuration
+- Make the client read `WORDPRESS_API_URL` from environment by default:
+
+  ```ts
+  const defaultBaseUrl = import.meta.env.WORDPRESS_API_URL;
+  ```
+
+- Allow explicit override via `createWordpressClient({ baseUrl })`.
+
+────────────────
+STEP 3  CONFIG FILE (wp-astro.config.ts)
+────────────────
+
+Goal: central config for site identity + locales.
+
+3.1  Create `wp-astro.config.ts`
+- Export a typed config object, for example:
+
+  ```ts
+  export const wpAstroConfig = {
+    wordpressUrl: import.meta.env.WORDPRESS_API_URL ?? "https://example.com",
+
+    siteUrl: import.meta.env.SITE_URL ?? "https://example.pages.dev",
+
+    siteName: {
+      ar: "موقعي",
+      en: "My Site",
+    },
+
+    siteDescription: {
+      ar: "وصف موقعك هنا",
+      en: "Your site description here",
+    },
+
+    defaultLocale: "ar" as const,
+    supportedLocales: ["ar", "en"] as const,
+
+    pagination: {
+      postsPerPage: 12,
+    },
+
+    seo: {
+      defaultOgImage: "/og-default.png",
+      defaultRobots: "index, follow",
+    },
+  } as const;
+
+  export type WpAstroConfig = typeof wpAstroConfig;
+  ```
+
+- No auth, no WooCommerce, no extra systems.
+
+────────────────
+STEP 4  THEME HOST COMPONENT
+────────────────
+
+Goal: a minimal Astro component that acts as a “host” for any theme.
+
+4.1  Create `src/components/core/ThemeHost.astro`
+- This component should:
+  - Accept props: config (WpAstroConfig), client (Wordpress client), and a child component (theme).
+  - For now, keep it simple: just render a slot or a passed-in theme component.
+
+  Example skeleton:
+
+  ```astro
+  ---
+  import type { WpAstroConfig } from "../../wp-astro.config";
+  import type { WordpressClientConfig } from "../../lib/wordpress-client";
+
+  const { config, client, children } = Astro.props as {
+    config: WpAstroConfig;
+    client: ReturnType<typeof createWordpressClient>;
+    children?: any;
+  };
+  ---
+
+  <div>
+    {children}
+  </div>
+  ```
+
+- Later, this can be extended, but for now it only needs to host whatever theme the user provides.
+
+────────────────
+STEP 5  SIMPLE EXAMPLE PAGE (OPTIONAL)
+────────────────
+
+Goal: show developers how to use the client and config without shipping a full theme.
+
+5.1  Create `src/pages/example.astro`
+- Demonstrate:
+  - Creating a client with `createWordpressClient({ baseUrl: wpAstroConfig.wordpressUrl })`.
+  - Fetching a few posts.
+  - Rendering a simple list of titles.
+
+- Keep the markup minimal; this is only a usage example, not a production theme.
+
+────────────────
+STEP 6  ENVIRONMENT FILES AND .gitignore
+────────────────
+
+6.1  Env examples
+- Create `.env.example` with:
+
+  ```env
+  WORDPRESS_API_URL=https://your-wordpress-site.com
+  SITE_URL=https://your-cloudflare-pages-url.pages.dev
+  ```
+
+- Do NOT commit any real `.env`.
+
+6.2  .gitignore
+- Ensure `.env` and `node_modules` are ignored.
+
+────────────────
+STEP 7  README WITH CLOUDFLARE QUICK START
+────────────────
+
+Goal: clear install instructions for beginners, in Arabic + English.
+
+7.1  README structure
+- Sections:
+  - Intro (what wp-astro does).
+  - Quick start on Cloudflare Pages.
+  - Environment variables.
+
+7.2  Cloudflare Deploy button
+- At the top of README add:
+
+  ```md
+  [![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/USER/wp-astro)
+  ```
+
+  (USER will be replaced by the owner later.)
+
+7.3  Quick start text (English + Arabic)
+- English:
+
+  - Fork the repo.
+  - Click “Deploy to Cloudflare Pages”.
+  - In Cloudflare:
+    - Build command: `npm run build`
+    - Output directory: `dist`
+    - Set:
+      - `WORDPRESS_API_URL`
+      - `SITE_URL`
+  - Redeploy and your Astro site will render WordPress content headlessly.
+
+- Arabic (Gulf):
+
+  - سو Fork للريبو في GitHub.
+  - اضغط زر Deploy to Cloudflare Pages.
+  - في Cloudflare:
+    - Build command: `npm run build`
+    - Output directory: `dist`
+    - أضف المتغيرات:
+      - `WORDPRESS_API_URL` = رابط موقع ووردبرس
+      - `SITE_URL` = رابط موقعك على Cloudflare Pages
+  - بعدين أعد النشر، والموقع يعرض محتوى ووردبرس من خلال Astro.
+
+────────────────
+STEP 8  CHECKS
+────────────────
+
+8.1  Run:
+- `npm install`
+- `npm run build`
+
+8.2  Ensure:
+- No TypeScript errors.
+- The example page builds successfully.
+- No references to any system other than WordPress and Astro exist.
+
+END OF INSTRUCTIONS
